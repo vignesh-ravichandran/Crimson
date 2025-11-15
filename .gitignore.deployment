@@ -1,0 +1,28 @@
+# Add these to your .gitignore if not already present
+
+# Environment files - NEVER commit these!
+.env
+.env.local
+.env.production
+.env.production.local
+*.env
+
+# Vercel
+.vercel
+
+# Local deployment scripts with credentials
+deploy.local.sh
+*.secrets.sh
+
+# Database dumps
+*.sql
+*.dump
+
+# Terraform/IaC state files (if using later)
+*.tfstate
+*.tfstate.backup
+
+# Backup files
+*.backup
+*.bak
+

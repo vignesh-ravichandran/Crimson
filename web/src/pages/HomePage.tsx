@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { getUserStats, UserStats } from '@/api/auth';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
 
 export function HomePage() {
   const navigate = useNavigate();
@@ -43,9 +44,12 @@ export function HomePage() {
               Welcome back, {user?.displayName || user?.username}!
             </p>
           </div>
-          <Button variant="secondary" onClick={logout}>
-            Logout
-          </Button>
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <Button variant="secondary" onClick={logout}>
+              Logout
+            </Button>
+          </div>
         </div>
 
         {/* Quick Stats */}

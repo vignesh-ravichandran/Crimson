@@ -26,8 +26,23 @@ const PORT = process.env.PORT || 3000;
 // ============================================================================
 
 // CORS configuration
+const allowedOrigins = [
+  process.env.FRONTEND_URL || 'http://localhost:5173',
+  'http://localhost:5173', // Always allow local dev
+];
+
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, Postman, etc)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      logger.warn(`CORS blocked origin: ${origin}`);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true
 }));
 
@@ -61,16 +76,41 @@ app.use((req, res, next) => {
 // ROUTES
 // ============================================================================
 
-// Health check
-app.get('/api/health', (req, res) => {
+// Root health check (for Render)
+app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
-    version: '1.0.0',
-    timestamp: new Date().toISOString(),
-    services: {
-      database: 'healthy',
-    }
+    timestamp: new Date().toISOString()
   });
+});
+
+// Detailed health check
+app.get('/api/health', async (req, res) => {
+  try {
+    // Test database connection
+    await prisma.$queryRaw`SELECT 1`;
+    
+    res.json({
+      status: 'ok',
+      version: '1.0.0',
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || 'development',
+      services: {
+        database: 'healthy',
+        api: 'healthy'
+      }
+    });
+  } catch (error) {
+    logger.error('Health check failed:', error);
+    res.status(503).json({
+      status: 'error',
+      timestamp: new Date().toISOString(),
+      services: {
+        database: 'unhealthy',
+        api: 'degraded'
+      }
+    });
+  }
 });
 
 // API routes
