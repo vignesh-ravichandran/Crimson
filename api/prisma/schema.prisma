@@ -1,0 +1,273 @@
+// Crimson Club Database Schema
+// Based on design/database-schema.md
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// USERS
+// ============================================================================
+
+model User {
+  id                String    @id @default(uuid()) @db.Uuid
+  username          String    @unique
+  email             String    @unique
+  passwordHash      String?   @map("password_hash")
+  displayName       String?   @map("display_name")
+  avatarUrl         String?   @map("avatar_url")
+  settings          Json      @default("{\"sounds\": true, \"haptics\": true, \"theme\": \"auto\", \"timezone\": \"UTC\"}")
+  oauthProvider     String?   @map("oauth_provider")
+  oauthProviderId   String?   @map("oauth_provider_id")
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  lastSeenAt        DateTime? @map("last_seen_at") @db.Timestamptz
+
+  // Relations
+  journeysCreated   Journey[]        @relation("JourneyCreator")
+  journeyMembers    JourneyMember[]
+  checkins          Checkin[]
+  userBadges        UserBadge[]
+  streaks           Streak[]
+  invitesSent       JourneyInvite[]  @relation("InviteSender")
+
+  @@index([email])
+  @@index([username])
+  @@index([oauthProvider, oauthProviderId])
+  @@map("users")
+}
+
+// ============================================================================
+// JOURNEYS
+// ============================================================================
+
+model Journey {
+  id          String   @id @default(uuid()) @db.Uuid
+  title       String
+  description String?
+  isPublic    Boolean  @default(false) @map("is_public")
+  status      String   @default("active")
+  metadata    Json     @default("{}")
+  createdBy   String?  @map("created_by") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  creator         User?             @relation("JourneyCreator", fields: [createdBy], references: [id], onDelete: SetNull)
+  members         JourneyMember[]
+  dimensions      Dimension[]
+  checkins        Checkin[]
+  invites         JourneyInvite[]
+  userBadges      UserBadge[]
+  streaks         Streak[]
+  leaderboardCache LeaderboardCache[]
+
+  @@index([createdBy])
+  @@index([isPublic])
+  @@index([status])
+  @@index([createdAt(sort: Desc)])
+  @@map("journeys")
+}
+
+model JourneyMember {
+  id        String   @id @default(uuid()) @db.Uuid
+  journeyId String   @map("journey_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  role      String   @default("member")
+  joinedAt  DateTime @default(now()) @map("joined_at") @db.Timestamptz
+  lastCheckinAt DateTime? @map("last_checkin_at") @db.Timestamptz
+
+  // Relations
+  journey   Journey @relation(fields: [journeyId], references: [id], onDelete: Cascade)
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([journeyId, userId])
+  @@index([journeyId])
+  @@index([userId])
+  @@index([journeyId, role])
+  @@map("journey_members")
+}
+
+// ============================================================================
+// DIMENSIONS
+// ============================================================================
+
+model Dimension {
+  id           String   @id @default(uuid()) @db.Uuid
+  journeyId    String   @map("journey_id") @db.Uuid
+  name         String
+  description  String?
+  examples     Json     @default("[]")
+  weight       Int      @default(1)
+  displayOrder Int      @default(0) @map("display_order")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  journey         Journey          @relation(fields: [journeyId], references: [id], onDelete: Cascade)
+  checkinDetails  CheckinDetail[]
+
+  @@index([journeyId, displayOrder])
+  @@map("dimensions")
+}
+
+// ============================================================================
+// CHECKINS
+// ============================================================================
+
+model Checkin {
+  id               String   @id @default(uuid()) @db.Uuid
+  userId           String   @map("user_id") @db.Uuid
+  journeyId        String   @map("journey_id") @db.Uuid
+  date             DateTime @db.Date
+  totalScore       Decimal  @default(0) @map("total_score") @db.Decimal(10, 2)
+  clientCheckinId  String?  @unique @map("client_checkin_id") @db.VarChar(255)
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  user    User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  journey Journey         @relation(fields: [journeyId], references: [id], onDelete: Cascade)
+  details CheckinDetail[]
+
+  @@unique([userId, journeyId, date])
+  @@index([userId, journeyId, date(sort: Desc)])
+  @@index([journeyId, date(sort: Desc)])
+  @@index([clientCheckinId])
+  @@map("checkins")
+}
+
+model CheckinDetail {
+  id          String   @id @default(uuid()) @db.Uuid
+  checkinId   String   @map("checkin_id") @db.Uuid
+  dimensionId String   @map("dimension_id") @db.Uuid
+  effortLevel Int      @map("effort_level") @db.SmallInt
+  score       Decimal  @db.Decimal(10, 2)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  checkin   Checkin   @relation(fields: [checkinId], references: [id], onDelete: Cascade)
+  dimension Dimension @relation(fields: [dimensionId], references: [id], onDelete: Cascade)
+
+  @@unique([checkinId, dimensionId])
+  @@index([checkinId])
+  @@index([dimensionId])
+  @@map("checkin_details")
+}
+
+// ============================================================================
+// GAMIFICATION
+// ============================================================================
+
+model Badge {
+  id          String   @id @default(uuid()) @db.Uuid
+  key         String   @unique
+  name        String
+  description String
+  criteria    Json
+  iconUrl     String?  @map("icon_url")
+  tier        String   @default("bronze")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  userBadges UserBadge[]
+
+  @@index([key])
+  @@map("badges")
+}
+
+model UserBadge {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  badgeId   String   @map("badge_id") @db.Uuid
+  journeyId String?  @map("journey_id") @db.Uuid
+  awardedOn DateTime @default(now()) @map("awarded_on") @db.Timestamptz
+  metadata  Json     @default("{}")
+
+  // Relations
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badge   Badge    @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+  journey Journey? @relation(fields: [journeyId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, badgeId, journeyId])
+  @@index([userId, awardedOn(sort: Desc)])
+  @@index([badgeId])
+  @@index([journeyId])
+  @@map("user_badges")
+}
+
+model Streak {
+  id              String    @id @default(uuid()) @db.Uuid
+  userId          String    @map("user_id") @db.Uuid
+  journeyId       String    @map("journey_id") @db.Uuid
+  currentStreak   Int       @default(0) @map("current_streak")
+  longestStreak   Int       @default(0) @map("longest_streak")
+  lastCheckinDate DateTime? @map("last_checkin_date") @db.Date
+  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  journey Journey @relation(fields: [journeyId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, journeyId])
+  @@index([userId, journeyId])
+  @@index([journeyId, longestStreak(sort: Desc)])
+  @@map("streaks")
+}
+
+// ============================================================================
+// INVITES
+// ============================================================================
+
+model JourneyInvite {
+  id         String    @id @default(uuid()) @db.Uuid
+  journeyId  String    @map("journey_id") @db.Uuid
+  invitedBy  String    @map("invited_by") @db.Uuid
+  email      String
+  token      String    @unique
+  status     String    @default("pending")
+  expiresAt  DateTime  @map("expires_at") @db.Timestamptz
+  acceptedAt DateTime? @map("accepted_at") @db.Timestamptz
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  journey Journey @relation(fields: [journeyId], references: [id], onDelete: Cascade)
+  inviter User    @relation("InviteSender", fields: [invitedBy], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([email, status])
+  @@index([journeyId, status])
+  @@map("journey_invites")
+}
+
+// ============================================================================
+// LEADERBOARD
+// ============================================================================
+
+model LeaderboardCache {
+  id             String   @id @default(uuid()) @db.Uuid
+  journeyId      String   @map("journey_id") @db.Uuid
+  userId         String   @map("user_id") @db.Uuid
+  period         String
+  periodKey      String   @map("period_key")
+  totalScore     Decimal  @default(0) @map("total_score") @db.Decimal(10, 2)
+  checkinCount   Int      @default(0) @map("checkin_count")
+  streakCount    Int      @default(0) @map("streak_count")
+  completionRate Decimal  @default(0) @map("completion_rate") @db.Decimal(5, 2)
+  rank           Int?
+  lastUpdated    DateTime @default(now()) @map("last_updated") @db.Timestamptz
+
+  // Relations
+  journey Journey @relation(fields: [journeyId], references: [id], onDelete: Cascade)
+
+  @@unique([journeyId, userId, period, periodKey])
+  @@index([journeyId, period, periodKey, totalScore(sort: Desc)])
+  @@index([journeyId, period, periodKey, rank])
+  @@map("leaderboard_cache")
+}
+
