@@ -52,7 +52,7 @@ export async function getRadarData(req: AuthRequest, res: Response) {
       const avgScore = scores.length > 0
         ? scores.reduce((sum: number, s: number) => sum + s, 0) / scores.length
         : 0;
-      const maxScore = dim.weight * 3; // Max effort level is 3
+      const maxScore = dim.weight * 3.5; // Max effort level is 4, which gives 3.5 score
 
       // Generate colors from crimson palette
       const colors = ['#DC143C', '#8B0000', '#CD5C5C', '#B22222', '#A52A2A', '#800000'];

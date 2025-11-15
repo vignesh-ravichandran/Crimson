@@ -226,7 +226,7 @@ export function JourneyDetailPage() {
                   {journey.stats.averageScore ? Number(journey.stats.averageScore).toFixed(1) : '0.0'}
                   {journey.dimensions && journey.dimensions.length > 0 && (
                     <span className="text-lg text-muted">
-                      {' / '}{journey.dimensions.reduce((sum: number, d: any) => sum + (d.weight * 3), 0)}
+                      {' / '}{journey.dimensions.reduce((sum: number, d: any) => sum + (d.weight * 3.5), 0)}
                     </span>
                   )}
                 </div>

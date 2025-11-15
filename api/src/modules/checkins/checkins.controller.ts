@@ -7,13 +7,14 @@ import { prisma } from '../../lib/prisma';
 import { logger } from '../../lib/logger';
 import { Prisma } from '@prisma/client';
 
-// Effort level to score mapping (from design/database-schema.md)
+// Effort level to score mapping
+// 0 = Skip (penalty), 1 = Minimal, 2 = Moderate, 3 = Strong, 4 = Maximum
 const EFFORT_SCORE_MAP: Record<number, number> = {
-  1: -1.0,  // Skipped
-  2: 0.5,   // Minimal Effort
-  3: 1.0,   // Partial Effort
-  4: 2.0,   // Solid Effort
-  5: 3.0    // Crushed It
+  0: -1.0,  // Skip (penalty)
+  1: 0.5,   // Minimal
+  2: 1.5,   // Moderate
+  3: 2.5,   // Strong
+  4: 3.5    // Maximum
 };
 
 export async function createOrUpdateCheckin(req: AuthRequest, res: Response) {
@@ -58,14 +59,14 @@ export async function createOrUpdateCheckin(req: AuthRequest, res: Response) {
 
     // Validate details
     for (const detail of details) {
-      if (!detail.dimensionId || !detail.effortLevel) {
+      if (!detail.dimensionId || detail.effortLevel === undefined || detail.effortLevel === null) {
         return res.status(400).json({
           error: { code: 'VALIDATION_ERROR', message: 'Each detail must have dimensionId and effortLevel' }
         });
       }
-      if (detail.effortLevel < 1 || detail.effortLevel > 5) {
+      if (detail.effortLevel < 0 || detail.effortLevel > 4) {
         return res.status(400).json({
-          error: { code: 'VALIDATION_ERROR', message: 'effortLevel must be between 1 and 5' }
+          error: { code: 'VALIDATION_ERROR', message: 'effortLevel must be between 0 and 4' }
         });
       }
     }

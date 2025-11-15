@@ -80,19 +80,15 @@ export function CheckinPage() {
         endDate: today,
       });
 
-      console.log('📅 Existing check-ins loaded:', response.data);
-
       // Create a Set of dates that have check-ins
       // Normalize dates to YYYY-MM-DD format
       const dates = new Set(
         response.data.map(c => {
           const dateStr = typeof c.date === 'string' ? c.date.split('T')[0] : c.date;
-          console.log('  - Check-in date:', dateStr);
           return dateStr;
         })
       );
       
-      console.log('✅ Checked-in dates:', Array.from(dates));
       setExistingCheckinDates(dates);
     } catch (err) {
       console.error('❌ Failed to load existing check-ins:', err);
@@ -122,7 +118,7 @@ export function CheckinPage() {
     try {
       const details = dimensions.map((d) => ({
         dimensionId: d.id,
-        effortLevel: effortLevels[d.id] || 3,
+        effortLevel: effortLevels[d.id] ?? 2, // Default: Moderate (use ?? instead of || to allow 0)
       }));
 
       await submitCheckin({
@@ -320,7 +316,7 @@ export function CheckinPage() {
 
                 {/* Effort Level Selector */}
                 <EffortLevelSelector
-                  value={effortLevels[currentDimension.id] || 3}
+                  value={effortLevels[currentDimension.id] ?? 2}
                   onChange={(level) => handleEffortChange(currentDimension.id, level)}
                 />
 

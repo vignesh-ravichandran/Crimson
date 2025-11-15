@@ -2,6 +2,16 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
+// Effort level to score mapping
+// 0 = Skip (penalty), 1 = Minimal, 2 = Moderate, 3 = Strong, 4 = Maximum
+const EFFORT_SCORE_MAP: Record<number, number> = {
+  0: -1.0,  // Skip (penalty)
+  1: 0.5,   // Minimal
+  2: 1.5,   // Moderate
+  3: 2.5,   // Strong
+  4: 3.5    // Maximum
+};
+
 async function main() {
   console.log('🌱 Seeding analytics data...');
 
@@ -148,12 +158,16 @@ async function main() {
       }
 
       // Apply progress factor
-      const effort = Math.round(Math.min(3, baseEffort * progressFactor));
+      const effort = Math.round(Math.min(4, baseEffort * progressFactor));
+      
+      // Calculate score using EFFORT_SCORE_MAP
+      const effortScore = EFFORT_SCORE_MAP[effort];
+      const score = dim.weight * effortScore;
       
       return {
         dimensionId: dim.id,
         effortLevel: effort,
-        score: effort * dim.weight
+        score: score
       };
     });
 

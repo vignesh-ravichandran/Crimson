@@ -8,11 +8,11 @@ interface Props {
 }
 
 const EFFORT_LEVELS = [
-  { value: 1, label: 'Minimal', emoji: '😴', color: 'bg-gray-300 text-gray-700' },
-  { value: 2, label: 'Light', emoji: '😊', color: 'bg-blue-300 text-blue-700' },
-  { value: 3, label: 'Moderate', emoji: '💪', color: 'bg-green-300 text-green-700' },
-  { value: 4, label: 'Strong', emoji: '🔥', color: 'bg-orange-300 text-orange-700' },
-  { value: 5, label: 'Maximum', emoji: '⚡', color: 'bg-red-300 text-red-700' },
+  { value: 0, label: 'Skip', emoji: '🚫', color: 'bg-gray-400 text-gray-800 dark:bg-gray-600 dark:text-gray-200', penalty: true },
+  { value: 1, label: 'Minimal', emoji: '😴', color: 'bg-blue-200 text-blue-800 dark:bg-blue-900 dark:text-blue-200' },
+  { value: 2, label: 'Moderate', emoji: '💪', color: 'bg-green-300 text-green-800 dark:bg-green-900 dark:text-green-200' },
+  { value: 3, label: 'Strong', emoji: '🔥', color: 'bg-orange-300 text-orange-800 dark:bg-orange-900 dark:text-orange-200' },
+  { value: 4, label: 'Maximum', emoji: '⚡', color: 'bg-red-400 text-red-900 dark:bg-red-900 dark:text-red-200' },
 ];
 
 export function EffortLevelSelector({ value, onChange, disabled = false }: Props) {
@@ -46,8 +46,8 @@ export function EffortLevelSelector({ value, onChange, disabled = false }: Props
       <div className="px-2">
         <input
           type="range"
-          min="1"
-          max="5"
+          min="0"
+          max="4"
           value={value}
           onChange={(e) => onChange(parseInt(e.target.value))}
           disabled={disabled}
@@ -61,13 +61,24 @@ export function EffortLevelSelector({ value, onChange, disabled = false }: Props
       </div>
 
       {/* Selected Level Display */}
-      <div className="text-center p-3 bg-surface rounded-lg">
+      <div className={`text-center p-3 rounded-lg ${
+        value === 0 
+          ? 'bg-gray-100 dark:bg-gray-800 border-2 border-gray-400 dark:border-gray-600' 
+          : 'bg-surface'
+      }`}>
         <p className="text-sm text-muted mb-1">Selected Effort Level</p>
         <div className="flex items-center justify-center gap-2">
-          <span className="text-2xl">{EFFORT_LEVELS[value - 1].emoji}</span>
-          <span className="text-xl font-bold text-primary-500">{value}</span>
-          <span className="text-sm text-text">- {EFFORT_LEVELS[value - 1].label}</span>
+          <span className="text-2xl">{EFFORT_LEVELS[value].emoji}</span>
+          <span className={`text-xl font-bold ${value === 0 ? 'text-gray-600 dark:text-gray-400' : 'text-primary-500'}`}>
+            {value}
+          </span>
+          <span className="text-sm text-text">- {EFFORT_LEVELS[value].label}</span>
         </div>
+        {value === 0 && (
+          <p className="text-xs text-gray-600 dark:text-gray-400 mt-2">
+            ⚠️ Skip will result in a penalty score
+          </p>
+        )}
       </div>
     </div>
   );
