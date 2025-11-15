@@ -32,7 +32,7 @@ export async function getRadarData(req: AuthRequest, res: Response) {
         checkinDetails: {
           where: {
             checkin: {
-              userId: targetUserId,
+              userId: targetUserId as string,
               date: {
                 gte: start,
                 lte: end
@@ -47,10 +47,10 @@ export async function getRadarData(req: AuthRequest, res: Response) {
     });
 
     // Calculate average scores
-    const radarData = dimensions.map((dim, index) => {
-      const scores = dim.checkinDetails.map(cd => Number(cd.score));
+    const radarData = dimensions.map((dim: any, index: number) => {
+      const scores = dim.checkinDetails.map((cd: any) => Number(cd.score));
       const avgScore = scores.length > 0
-        ? scores.reduce((sum, s) => sum + s, 0) / scores.length
+        ? scores.reduce((sum: number, s: number) => sum + s, 0) / scores.length
         : 0;
       const maxScore = dim.weight * 3; // Max effort level is 3
 
@@ -116,7 +116,7 @@ export async function getLineChartData(req: AuthRequest, res: Response) {
     const checkins = await prisma.checkin.findMany({
       where: {
         journeyId,
-        userId: targetUserId,
+        userId: targetUserId as string,
         date: {
           gte: start,
           lte: end
@@ -189,7 +189,7 @@ export async function getStackedBarData(req: AuthRequest, res: Response) {
     const checkins = await prisma.checkin.findMany({
       where: {
         journeyId,
-        userId: targetUserId,
+        userId: targetUserId as string,
         date: {
           gte: start,
           lte: end
@@ -206,7 +206,7 @@ export async function getStackedBarData(req: AuthRequest, res: Response) {
     });
 
     // Format data for stacked bar chart
-    const stackedData = checkins.map(checkin => {
+    const stackedData = checkins.map((checkin: any) => {
       const dayData: any = {
         date: checkin.date.toISOString().split('T')[0],
         formattedDate: checkin.date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
@@ -214,7 +214,7 @@ export async function getStackedBarData(req: AuthRequest, res: Response) {
       };
 
       // Add each dimension's score
-      checkin.details.forEach(detail => {
+      checkin.details.forEach((detail: any) => {
         dayData[detail.dimension.name] = Number(detail.score);
       });
 
@@ -279,7 +279,7 @@ export async function getHeatmapData(req: AuthRequest, res: Response) {
     const checkins = await prisma.checkin.findMany({
       where: {
         journeyId,
-        userId: targetUserId,
+        userId: targetUserId as string,
         date: {
           gte: start,
           lte: end

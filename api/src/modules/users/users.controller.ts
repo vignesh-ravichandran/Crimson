@@ -22,7 +22,7 @@ export async function getMe(req: AuthRequest, res: Response) {
         username: true,
         displayName: true,
         avatarUrl: true,
-        preferences: true,
+        settings: true,
         createdAt: true,
         updatedAt: true
       }
@@ -60,7 +60,7 @@ export async function updateMe(req: AuthRequest, res: Response) {
       where: { id: req.user.id },
       data: {
         displayName: displayName !== undefined ? displayName : undefined,
-        preferences: preferences !== undefined ? preferences : undefined
+        settings: preferences !== undefined ? preferences : undefined
       },
       select: {
         id: true,
@@ -68,7 +68,7 @@ export async function updateMe(req: AuthRequest, res: Response) {
         username: true,
         displayName: true,
         avatarUrl: true,
-        preferences: true,
+        settings: true,
         createdAt: true,
         updatedAt: true
       }
