@@ -223,7 +223,7 @@ export function JourneyDetailPage() {
             <Card variant="bordered">
               <div className="text-center">
                 <div className="text-3xl font-bold text-primary-500">
-                  {journey.stats.avgScore ? Number(journey.stats.avgScore).toFixed(1) : '0.0'}
+                  {journey.stats.averageScore ? Number(journey.stats.averageScore).toFixed(1) : '0.0'}
                   {journey.dimensions && journey.dimensions.length > 0 && (
                     <span className="text-lg text-muted">
                       {' / '}{journey.dimensions.reduce((sum: number, d: any) => sum + (d.weight * 3), 0)}

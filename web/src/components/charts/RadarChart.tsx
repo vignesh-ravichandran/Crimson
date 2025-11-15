@@ -80,7 +80,7 @@ export function RadarChart({ data, title }: Props) {
 
       {/* Data Summary */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-4">
-        {data.map((d, idx) => (
+        {data.map((d) => (
           <div 
             key={d.dimensionId} 
             className="p-3 bg-surface rounded-lg border border-border"
